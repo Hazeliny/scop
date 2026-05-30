@@ -1,0 +1,25 @@
+[package]
+name = "scop"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "scop"
+path = "src/main.rs"
+
+[dependencies]
+# Window & event management — as allowed by the subject
+sdl2 = { version = "0.36", features = ["bundled"] }
+
+# OpenGL function loader (part of window/context management, API binding, not rendering logic)
+gl = "0.14"
+
+# Image loading for texture (loading pixels only, no 3D logic)
+image = { version = "0.24", default-features = false, features = ["png", "jpeg"] }
+
+# NOTE: No math lib, no OBJ loader, no shader lib — all implemented manually
+
+# Why replacing glutin+winit with sdl2
+# glutin 0.31 API is very complicated, only the initilization requires 50+ lines
+# SDL2 Opens window in 10 lines, more stable across platorms, completely consistent with macOS and Linux
+# SDL2 is a window and event management library, which meets the requirement of the subject

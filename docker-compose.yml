@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  scop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: scop:latest
+    # DISPLAY and X11 socket are injected by the Makefile at runtime
+    # (different values for macOS vs Linux — see Makefile)
+    environment:
+      - DISPLAY=${DISPLAY}
+      - LIBGL_ALWAYS_INDIRECT=${LIBGL_ALWAYS_INDIRECT:-0}
+    volumes:
+      # X11 socket mount — only used on Linux (empty string on macOS, Docker ignores it)
+      - ${X11_SOCKET:-/tmp/.X11-unix}:/tmp/.X11-unix:ro
+      # Live-reload shaders & assets without rebuild
+      - ./shaders:/app/shaders:ro
+      - ./assets:/app/assets:ro
+    network_mode: host   # needed for X11 on Linux
+    # On macOS we override network_mode to bridge via DISPLAY host
+    # (handled in Makefile with docker run directly)
