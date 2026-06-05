@@ -18,20 +18,25 @@ OS := $(shell uname -s)
 
 # ── Default target ───────────────────────────────────────────────────────────
 .PHONY: all
-all: deps build run
+all:
+ifeq ($(OS), Darwin)
+	@$(MAKE) dev
+else
+	@$(MAKE) deps build run
+endif
 
 # ── Dependency check & install hint ──────────────────────────────────────────
 .PHONY: deps
 deps:
 ifeq ($(OS), Darwin)
 	@echo "==> [macOS] Checking dependencies..."
-	@which xquartz > /dev/null 2>&1 || \
-		(echo "  XQuartz not found. Installing via Homebrew..." && \
-		 brew install --cask xquartz && \
-		 echo "  !! Please LOG OUT and LOG BACK IN after XQuartz install, then re-run make.")
-	@which docker > /dev/null 2>&1 || \
-		(echo "  Docker not found. Please install Docker Desktop from https://www.docker.com" && exit 1)
-	@echo "  OK: XQuartz and Docker found."
+	@which rustc > /dev/null 2>&1 || \
+		(echo "Rust not found. Run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh" && exit 1)
+	@which brew > /dev/null 2>&1 || \
+		(echo "Homebrew not found. See https://brew.sh" && exit 1)
+	@brew list sdl2 > /dev/null 2>&1 || \
+		(echo "Installing SDL2..." && brew install sdl2)
+	@echo "  OK: Rust and SDL2 found."
 else
 	@echo "==> [Linux] Checking dependencies..."
 	@which docker > /dev/null 2>&1 || \
@@ -53,16 +58,7 @@ build:
 .PHONY: run
 run:
 ifeq ($(OS), Darwin)
-	@echo "==> [macOS] Launching with XQuartz X11 forwarding..."
-	@# Ensure XQuartz is running
-	@open -a XQuartz 2>/dev/null || true
-	@sleep 1
-	@# Allow connections from localhost
-	@xhost +localhost 2>/dev/null || true
-	docker run --rm \
-		-e DISPLAY=host.docker.internal:0 \
-		-v /tmp/.X11-unix:/tmp/.X11-unix \
-		$(IMAGE_NAME)
+	@echo "macOS detected — use 'make dev' instead of 'make run'"
 else
 	@echo "==> [Linux] Launching with X11 socket passthrough..."
 	@xhost +local:docker 2>/dev/null || true
@@ -76,16 +72,16 @@ endif
 # ── Native dev (no Docker) ────────────────────────────────────────────────────
 # Useful for fast iteration. Requires Rust + system OpenGL libs installed.
 .PHONY: dev
-dev:
+dev: deps
 ifeq ($(OS), Darwin)
-	@which rustc > /dev/null 2>&1 || \
-		(echo "Rust not found. Run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh" && exit 1)
+	@echo "==> [macOS] Building and running natively..."
+	@# Help cargo find SDL2 installed by Homebrew
+	LIBRARY_PATH="$$(brew --prefix sdl2)/lib" \
+	CPATH="$$(brew --prefix sdl2)/include" \
 	cargo run --release
 else
-	@which rustc > /dev/null 2>&1 || \
-		(echo "Rust not found. Run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh" && exit 1)
-	@sudo apt-get install -y libgl1-mesa-dev libx11-dev libxrandr-dev \
-		libxi-dev libxxf86vm-dev 2>/dev/null || true
+	@echo "==> [Linux] Building and running natively..."
+	@sudo apt-get install -y libsdl2-dev libgl1-mesa-dev 2>/dev/null || true
 	cargo run --release
 endif
 

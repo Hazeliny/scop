@@ -14,14 +14,14 @@ WORKDIR /app
 # Cache dependencies
 COPY Cargo.toml ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN cargo build --release 2>/dev/null || true
+RUN cargo build --release --features bundled 2>/dev/null || true
 RUN rm -rf src
 
 # Build real source
 COPY src ./src
 COPY shaders ./shaders
 COPY assets ./assets
-RUN cargo build --release
+RUN cargo build --release --features bundled
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
 FROM debian:bookworm-slim AS runtime

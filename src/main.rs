@@ -11,6 +11,12 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
 fn main() {
+    // ── Test OBJ parser (will be wired to real file in Step 6) ───────────────
+    // For now just verify it handles a missing file gracefully
+    match parser::parse("assets/42.obj") {
+        Ok(mesh) => println!("Mesh loaded: {} vertices", mesh.vertices.len()),
+        Err(e)   => println!("No OBJ yet (expected): {}", e),
+    }
     // ── 1. Init SDL2 ─────────────────────────────────────────────────────────
     let sdl_context = match sdl2::init() {
         Ok(ctx) => ctx,
